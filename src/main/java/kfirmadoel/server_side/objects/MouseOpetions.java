@@ -1,4 +1,4 @@
-package objects;
+package kfirmadoel.server_side.objects;
 
 
 import java.io.Serializable;
@@ -51,7 +51,17 @@ public class MouseOpetions implements Serializable
     @Override
     public String toString()
     {
-        return "MouseOpetions{" + "height=" + height + ", width=" + width + ", status=" + status + ", mask=" + mask + '}';
+        return String.format("MouseOptions{height=%d, width=%d, status=%s, mask=%d}", height, width, status, mask);
+    }
+
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+
+    public void setWidth(int width) {
+        this.width = width;
     }
 
     

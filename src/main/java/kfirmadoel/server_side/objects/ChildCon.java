@@ -1,16 +1,17 @@
-package objects;
+package kfirmadoel.server_side.objects;
 
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 import kfirmadoel.server_side.Childs;
-import kfirmadoel.server_side.Server;
 import kfirmadoel.server_side.documents.ChildInfo;
-import kfirmadoel.server_side.services.ChildInfoService;
 
 public class ChildCon {
     private Childs childs;
@@ -18,13 +19,15 @@ public class ChildCon {
     private Socket mainActinSocket;
     private String macAddr;
     private String ipAddr;
-    private int heightSize;
-    private int widthSize;
+
+    public String getMacAddr() {
+        return macAddr;
+    }
 
     public ChildCon(ServerSocket serverSocket, Childs childs) {
         this.serverSocket = serverSocket;
-        this.childs=childs;
-        mainActinSocket=null;
+        this.childs = childs;
+        mainActinSocket = null;
         try {
             mainActinSocket = serverSocket.accept();
             // Get InputStream from Socket
@@ -40,23 +43,12 @@ public class ChildCon {
                 this.ipAddr = childInfon.getIpAddr();
                 childs.updateChildInfo(childInfon);
             }
-            
+
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
     }
-
-    // private void listenToIncomeActions() {
-    //    Thread thread=new Thread(new Runnable() {
-    //     @Override
-    //     public void run() {
-    //         while (mainActinSocket!=null&&!mainActinSocket.isClosed()) {
-                
-    //         }
-    //     }
-    //    });
-    // }
 
     public void sendOverMainActionSocket(String msg) {
         Thread thread = new Thread(new Runnable() {
@@ -70,9 +62,9 @@ public class ChildCon {
                         // Send String
                         PrintWriter printWriter = new PrintWriter(outputStream, true); // Auto-flush enabled
                         printWriter.println(msg);
-
                         // No need to close PrintWriter here, as it's done automatically due to
                         // auto-flushing
+                        outputStream.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -82,8 +74,7 @@ public class ChildCon {
         thread.start();
     }
 
-    public Socket openActionSocket()
-    {
+    public Socket openActionSocket() {
         try (Socket actionSocket = serverSocket.accept()) {
             System.out.println("child connected to action socket");
             return actionSocket;
@@ -93,8 +84,7 @@ public class ChildCon {
         }
     }
 
-    public Socket openMouseSocket()
-    {
+    public Socket openMouseSocket() {
         try (Socket mouseSocket = serverSocket.accept()) {
             System.out.println("child connected to mouse socket");
             return mouseSocket;
@@ -104,8 +94,7 @@ public class ChildCon {
         }
     }
 
-    public Socket openKeyboardSocket()
-    {
+    public Socket openKeyboardSocket() {
         try (Socket keyboardSocket = serverSocket.accept()) {
             System.out.println("child connected to keyboard socket");
             return keyboardSocket;
@@ -115,8 +104,7 @@ public class ChildCon {
         }
     }
 
-    public Socket openPhotoSocket()
-    {
+    public Socket openPhotoSocket() {
         try (Socket photoSocket = serverSocket.accept()) {
             System.out.println("child connected to photo socket");
             return photoSocket;
@@ -126,10 +114,8 @@ public class ChildCon {
         }
     }
 
-    public void closeServerSocket()
-    {
-        if(serverSocket!=null&&!serverSocket.isClosed())
-        {
+    public void closeServerSocket() {
+        if (serverSocket != null && !serverSocket.isClosed()) {
             try {
                 serverSocket.close();
                 System.out.println("closed the server socket");
@@ -139,10 +125,8 @@ public class ChildCon {
         }
     }
 
-    public void closeMainActionSocket()
-    {
-        if(mainActinSocket!=null&&!mainActinSocket.isClosed())
-        {
+    public void closeMainActionSocket() {
+        if (mainActinSocket != null && !mainActinSocket.isClosed()) {
             try {
                 mainActinSocket.close();
                 System.out.println("closed the main action socket");
@@ -150,24 +134,26 @@ public class ChildCon {
                 e.printStackTrace();
             }
         }
-
     }
 
-    public int getHeightSize() {
-        return heightSize;
+    public ArrayList<Socket> getSocketsForConnection() {
+        ArrayList<Socket> childSockets = new ArrayList<Socket>();
+        synchronized (serverSocket) {
+            sendOverMainActionSocket("open new connection");
+            Socket actionSocket = openActionSocket();
+            if (actionSocket != null)
+                childSockets.add(actionSocket);
+            Socket photoSocket = openPhotoSocket();
+            if (photoSocket != null)
+                childSockets.add(photoSocket);
+            Socket keyboardSocket = openKeyboardSocket();
+            if (keyboardSocket != null)
+                childSockets.add(keyboardSocket);
+            Socket mouseSocket = openMouseSocket();
+            if (mouseSocket != null)
+                childSockets.add(mouseSocket);
+            return childSockets;
+        }
     }
 
-    public void setHeightSize(int heightSize) {
-        this.heightSize = heightSize;
-    }
-
-    public int getWidthSize() {
-        return widthSize;
-    }
-
-    public void setWidthSize(int widthSize) {
-        this.widthSize = widthSize;
-    }
-
-    
 }

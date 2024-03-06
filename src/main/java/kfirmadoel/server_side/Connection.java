@@ -1,17 +1,19 @@
-package kfirmadoel;
+package kfirmadoel.server_side;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.Socket;
-
-import objects.Connections;
-import objects.KeyboardButton;
-import objects.MouseOpetions;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import kfirmadoel.server_side.objects.Connections;
+import kfirmadoel.server_side.objects.KeyboardButton;
+import kfirmadoel.server_side.objects.MouseOpetions;
 
 public class Connection {
     public static final int defaultHeight = 1080;
@@ -27,15 +29,10 @@ public class Connection {
     private Socket childMouseSocket;
     private boolean isScreenShared;
     private boolean isUnderControl;
-    private int childHeightResolution;
-    private int childWidthResolution;
 
-    public Connection(int childHeightResolution,
-            int childWidthResolution, Socket parentActionSocket, Socket parentPhotoSocket, Socket parentKeyboardSocket,
+    public Connection(Socket parentActionSocket, Socket parentPhotoSocket, Socket parentKeyboardSocket,
             Socket parentMouseSocket, Socket childActionSocket, Socket childPhotoSocket, Socket childKeyboardSocket,
             Socket childMouseSocket, Connections connections) {
-        this.childHeightResolution = childHeightResolution;
-        this.childWidthResolution = childWidthResolution;
         this.connections = connections;
         this.parentActionSocket = parentActionSocket;
         this.parentPhotoSocket = parentPhotoSocket;
@@ -55,10 +52,34 @@ public class Connection {
 
     public void startScreenShare() {
         this.isScreenShared = true;
+        try (OutputStream outputStream = childActionSocket.getOutputStream()) {
+            // Wrap the output stream with a PrintWriter for writing strings
+            PrintWriter writer = new PrintWriter(outputStream, true);
+
+            writer.println("start screen share");
+
+            // Close the resources
+            writer.close();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void stopScreenShare() {
         this.isScreenShared = false;
+        try (OutputStream outputStream = childActionSocket.getOutputStream()) {
+            // Wrap the output stream with a PrintWriter for writing strings
+            PrintWriter writer = new PrintWriter(outputStream, true);
+
+            writer.println("stop screen share");
+
+            // Close the resources
+            writer.close();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void startcontrol() {
@@ -115,11 +136,29 @@ public class Connection {
             case "stop give control":
                 stopcontrol();
                 break;
-
+            case "shoutdown":
+                shoutdown();
+                break;
             // additional cases as needed
             default:
                 System.out.println("command dont support");
                 // code to be executed if none of the cases match
+        }
+    }
+
+    private void shoutdown() {
+        try (OutputStream outputStream = childActionSocket.getOutputStream()) {
+            // Wrap the output stream with a PrintWriter for writing strings
+            PrintWriter writer = new PrintWriter(outputStream, true);
+
+            // Write the string "hello" to the socket
+            writer.println("shoutdown");
+
+            // Close the resources
+            writer.close();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -181,9 +220,6 @@ public class Connection {
 
                         if (isUnderControl && childMouseSocket != null && !childMouseSocket.isClosed()) {
                             synchronized (outMouseStreamToChild) {
-                                // 1080*1920
-                                recivedkey.setHeight(recivedkey.getHeight() * (childHeightResolution / defaultHeight));
-                                recivedkey.setWidth(recivedkey.getWidth() * (childWidthResolution / defaultWidth));
                                 outMouseStreamToChild.writeObject(recivedkey);
                                 outMouseStreamToChild.flush();
                                 System.out.println("send mouse to child");
@@ -203,7 +239,7 @@ public class Connection {
     }
 
     public void handleKeyboardTransfer() {
-        Thread thread=new Thread(new Runnable() {
+        Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 KeyboardButton recivedkey;
@@ -211,13 +247,13 @@ public class Connection {
                         parentKeyboardSocket.getInputStream());
                         ObjectOutputStream outKeyboardStreamToChild = new ObjectOutputStream(
                                 childKeyboardSocket.getOutputStream())) {
-        
+
                     while (parentMouseSocket != null && !parentMouseSocket.isClosed() &&
                             childMouseSocket != null && !childMouseSocket.isClosed()) {
-        
+
                         recivedkey = (KeyboardButton) incomeKeyboardStreamFromParent.readObject();
                         System.out.println("got recivedkey of mouse");
-        
+
                         if (isUnderControl && childMouseSocket != null && !childMouseSocket.isClosed()) {
                             synchronized (outKeyboardStreamToChild) {
                                 outKeyboardStreamToChild.writeObject(recivedkey);
@@ -232,7 +268,7 @@ public class Connection {
                     e.printStackTrace();
                 } finally {
                     closeConnection();
-                }        
+                }
             }
         });
         thread.start();

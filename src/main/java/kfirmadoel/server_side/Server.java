@@ -2,44 +2,27 @@ package kfirmadoel.server_side;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.awt.Dimension;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
+
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.imageio.ImageIO;
-import javax.swing.SwingUtilities;
+
+
+import org.springframework.stereotype.Component;
 
 import kfirmadoel.server_side.documents.ChildForPar;
 import kfirmadoel.server_side.documents.ChildInfo;
+import kfirmadoel.server_side.documents.ParentConInfo;
+import kfirmadoel.server_side.documents.User;
+import kfirmadoel.server_side.objects.ChildCon;
+import kfirmadoel.server_side.objects.Connections;
 import kfirmadoel.server_side.services.ChildInfoService;
 import kfirmadoel.server_side.services.ParentConService;
 import kfirmadoel.server_side.services.UserService;
-import objects.ChildCon;
-import objects.Connections;
-import objects.ParentCon;
 
+@Component
 public class Server {
     private static final int MAIN_PORT_FOR_PARENT = 12345;
     private static final int MAIN_PORT_FOR_CHILD = 54321;
@@ -52,7 +35,10 @@ public class Server {
     private ChildInfoService childInfoService;
     private UserService userService;
 
-    public Server(UserService userService) {
+    public Server(ParentConService parentConService, ChildInfoService childInfoService, UserService userService) {
+        this.parentConService = parentConService;
+        this.childInfoService = childInfoService;
+        this.userService = userService;
         parents = new Parents(this);
         childs = new Childs(this);
         connections = new Connections(this);
@@ -63,7 +49,8 @@ public class Server {
     private void openWelcomeSocketForChild() {
         try {
             welcomeSocketChild = new ServerSocket(MAIN_PORT_FOR_CHILD);
-            System.out.println(String.format("Welcome server of the parent is listening on port %d...", MAIN_PORT_FOR_CHILD));
+            System.out.println(
+                    String.format("Welcome server of the parent is listening on port %d...", MAIN_PORT_FOR_CHILD));
             waitToConnectionFromChild();
         } catch (IOException e) {
             e.printStackTrace();
@@ -112,7 +99,8 @@ public class Server {
     private void openWelcomeSocketForParent() {
         try {
             welcomeSocketParent = new ServerSocket(MAIN_PORT_FOR_PARENT);
-            System.out.println(String.format("Welcome server of the parent is listening on port %d...", MAIN_PORT_FOR_PARENT));
+            System.out.println(
+                    String.format("Welcome server of the parent is listening on port %d...", MAIN_PORT_FOR_PARENT));
             waitToConnectionFromParent();
         } catch (IOException e) {
             e.printStackTrace();
@@ -126,34 +114,29 @@ public class Server {
             public void run() {
                 Socket connectionSocket;
                 DataOutputStream out;
-                InputStream in;
                 int port = 0;
                 // Create a socket connection
                 while (true) {
                     try {
                         connectionSocket = welcomeSocketParent.accept();
                         out = new DataOutputStream(connectionSocket.getOutputStream());
-                        in = connectionSocket.getInputStream();
+                        ServerSocket socket = new ServerSocket(0);
+                        port = socket.getLocalPort();
+                        String.format("Free port found: %d", port);
+                        out.writeInt(port);
+                        Thread thread = new Thread(new Runnable() {
 
-                        // Read a line of text from the input stream
-                        //if (!parents.isParentExsistByIP(connectionSocket.getInetAddress().getHostAddress())) {
-                            ServerSocket socket = new ServerSocket(0);
-                            port = socket.getLocalPort();
-                            String.format("Free port found: %d", port);
-                            out.writeInt(port);
-                            Thread thread = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                parents.add(socket);
+                            }
 
-                                @Override
-                                public void run() {
-                                    parents.add(socket);
-                                }
-
-                            });
-                            thread.start();
-                            connectionSocket.close();
-                        //} else {
-                        //   out.writeUTF("person already connect");
-                        //}
+                        });
+                        thread.start();
+                        connectionSocket.close();
+                        // } else {
+                        // out.writeUTF("person already connect");
+                        // }
                     } catch (IOException ex) {
                         Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -174,17 +157,43 @@ public class Server {
             Socket keyboardSocket,
             Socket mouseSocket) {
         ChildForPar childForPar = parentConService.getChildInfoByEmailAndName(email, name);
-        ChildCon childCon = childs.getChildByMacAddr(childForPar.getMacAddr());
-        if(childCon==null)
-        {
+        ChildCon childCon = childs.getChildByMacAddr(childForPar.getMacAddr()); 
+        if (childCon == null) {
             System.out.println("child disconnected");
             return;
         }
-          ArrayList<Socket> childSockets=childCon.getSocketsForConnection();
-          if(childSockets!=null&&childSockets.size()==4)
-          {
+        ArrayList<Socket> childSockets = childCon.getSocketsForConnection();
+        if (childSockets == null || childSockets.size() != 4) {
+
             return;
-          }
-          connections.addConnection(childCon.getHeightSize(), childCon.getWidthSize(), actionSocket, photoSocket, keyboardSocket, mouseSocket, childSockets.get(0), photoSocket, keyboardSocket, mouseSocket);
+        }
+        connections.addConnection(actionSocket, photoSocket,
+                keyboardSocket, mouseSocket, childSockets.get(0), childSockets.get(1), childSockets.get(2), childSockets.get(3));
     }
+
+    public boolean doesEmailAndPasswordCorrect(User user) {
+        User resultUser = userService.getUserByEmail(user.getEmail());
+        if (resultUser == null)
+            return false;
+        if (resultUser.getPassword().equals(user.getPassword()))
+            return true;
+        return false;
+    }
+
+    public boolean doesEmailExsistInUsers(String email) {
+        User user=userService.getUserByEmail(email);
+        if(user==null)
+        return false;
+        return true;
+    }
+
+    public void addNewUser(User user) {
+        userService.createUser(user);
+    }
+
+    public ParentConInfo getParentConInfoByEmail(String email) {
+         return parentConService.getParentConByEmail(email);
+    }
+
+    
 }

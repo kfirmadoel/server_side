@@ -1,16 +1,15 @@
 package kfirmadoel.server_side.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import kfirmadoel.server_side.documents.ChildInfo;
 import kfirmadoel.server_side.repositories.ChildInfoRepository;
-import kfirmadoel.server_side.repositories.ChildInfoRepository;
 
+@Service
 public class ChildInfoService {
 
     private ChildInfoRepository childInfoRepository;
 
-    
     public ChildInfoService(ChildInfoRepository childInfoRepository) {
         this.childInfoRepository = childInfoRepository;
     }

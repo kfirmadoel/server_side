@@ -1,8 +1,10 @@
 package kfirmadoel.server_side.documents;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-public class users {
+@Document(collection = "users")
+public class User {
 
     @Id
     private String email;
@@ -10,7 +12,7 @@ public class users {
     private String firstName;
     private String secondName;
 
-    public users(String email, String password, String firstName, String secondName) {
+    public User(String email, String password, String firstName, String secondName) {
         this.email = email;
         this.password = password;
         this.firstName = firstName;
@@ -47,8 +49,8 @@ public class users {
 
     @Override
     public String toString() {
-        return "users [email=" + email + ", password=" + password + ", firstName=" + firstName + ", secondName="
-                + secondName + "]";
+        return String.format("User [email=%s, password=%s, firstName=%s, secondName=%s]",
+                email, password, firstName, secondName);
     }
 
 }

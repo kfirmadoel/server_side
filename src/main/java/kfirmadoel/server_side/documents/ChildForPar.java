@@ -7,7 +7,7 @@ public class ChildForPar {
     private String macAddr;
     private String name;
 
-    public childForPar(String macAddr, String name) {
+    public ChildForPar(String macAddr, String name) {
         this.macAddr = macAddr;
         this.name = name;
     }
@@ -26,8 +26,8 @@ public class ChildForPar {
 
     @Override
     public String toString() {
-        return "childForPar [macAddr=" + macAddr + ", name=" + name + "]";
+        return String.format("childForPar [macAddr=%s, name=%s]", macAddr, name);
     }
-   
-    
 }
+
+

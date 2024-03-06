@@ -9,32 +9,25 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class ParentConInfo {
     @Id
     private String email;
-    private int connectionCode;
-    private ArrayList<childForPar> childsMac;
+    private ArrayList<ChildForPar> childsMac;
 
-    public ParentConInfo(String email, int connectionCode) {
+    public ParentConInfo(String email) {
         this.email = email;
-        this.connectionCode = connectionCode;
-        childsMac = new ArrayList();
+        childsMac = new ArrayList<ChildForPar>();
     }
 
     public String getEmail() {
         return email;
     }
 
-    public int getConnectionCode() {
-        return connectionCode;
-    }
 
-    public ArrayList<childForPar> getChildsMac() {
+    public ArrayList<ChildForPar> getChildsMac() {
         return childsMac;
     }
 
-    public void setConnectionCode(int connectionCode) {
-        this.connectionCode = connectionCode;
-    }
+    
 
-    public void addChild(childForPar child) {
+    public void addChild(ChildForPar child) {
         synchronized (childsMac) {
             childsMac.add(child);
         }
@@ -54,8 +47,7 @@ public class ParentConInfo {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("parentsCon [macAddr=").append(macAddr)
-                .append(", connectionCode=").append(connectionCode)
+        sb.append("parentsCon [email=").append(email)
                 .append(", childsMac=");
 
         for (int i = 0; i < childsMac.size(); i++) {

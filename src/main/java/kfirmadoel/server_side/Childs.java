@@ -4,8 +4,7 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 
 import kfirmadoel.server_side.documents.ChildInfo;
-import kfirmadoel.server_side.services.ChildInfoService;
-import objects.ChildCon;
+import kfirmadoel.server_side.objects.ChildCon;
 
 public class Childs {
     private  ArrayList<ChildCon> childsList;
@@ -24,11 +23,11 @@ public class Childs {
         }
     }
 
-    public ChildCon removeByIp(String ip) {
+    public ChildCon removeByMac(String macAddr) {
         synchronized (childsList) {
             for (int i = 0; i < childsList.size(); i++) {
-                if ((childsList.get(i)).getIp().equals(ip))
-                    return childsList.get(i);
+                if ((childsList.get(i)).getMacAddr().equals(macAddr))
+                return childsList.remove(i);
             }
         }
         return null;
@@ -36,7 +35,17 @@ public class Childs {
 
 	public void updateChildInfo(ChildInfo childInfon) {
 		server.updateChildInfo(childInfon);
-        childsList.remove(childInfon)
 	}
+
+    public ChildCon getChildByMacAddr(String macAddr) {
+        synchronized(childsList)
+        {
+            for (int i = 0; i < childsList.size(); i++) {
+                if(macAddr.equals(childsList.get(i).getMacAddr()))
+                return childsList.get(i);
+            }
+        }
+        return null;
+    }
 
 }
