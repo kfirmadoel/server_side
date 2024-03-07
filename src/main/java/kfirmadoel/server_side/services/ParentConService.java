@@ -56,4 +56,8 @@ public class ParentConService {
         }
         return null;
     }
+
+    public void updateParentCon(ParentConInfo parentConInfo) {
+        parentConRepository.save(parentConInfo);
+    }
 }

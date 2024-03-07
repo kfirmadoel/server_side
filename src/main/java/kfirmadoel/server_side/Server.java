@@ -157,7 +157,7 @@ public class Server {
             Socket keyboardSocket,
             Socket mouseSocket) {
         ChildForPar childForPar = parentConService.getChildInfoByEmailAndName(email, name);
-        ChildCon childCon = childs.getChildByMacAddr(childForPar.getMacAddr()); 
+        ChildCon childCon = childs.getChildByMacAddr(childForPar.getMacAddr());
         if (childCon == null) {
             System.out.println("child disconnected");
             return;
@@ -193,6 +193,10 @@ public class Server {
 
     public ParentConInfo getParentConInfoByEmail(String email) {
          return parentConService.getParentConByEmail(email);
+    }
+
+    public void updateParentConInfo(ParentConInfo parentConInfo) {
+        parentConService.updateParentCon(parentConInfo);
     }
 
     

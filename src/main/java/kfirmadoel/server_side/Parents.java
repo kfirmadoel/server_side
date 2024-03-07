@@ -45,10 +45,14 @@ public class Parents {
     }
 
     public void addNewUser(User user) {
-        addNewUser(user);
+        server.addNewUser(user);
     }
 
     public ParentConInfo getParentConInfoByEmail(String email) {
         return server.getParentConInfoByEmail(email);
+    }
+
+    public void updateParentConInfo(ParentConInfo parentConInfo) {
+        server.updateParentConInfo(parentConInfo);
     }
 }

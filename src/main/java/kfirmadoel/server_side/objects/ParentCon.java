@@ -1,6 +1,5 @@
 package kfirmadoel.server_side.objects;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -13,6 +12,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 import kfirmadoel.server_side.Parents;
+import kfirmadoel.server_side.documents.ParentConInfo;
 import kfirmadoel.server_side.documents.User;
 
 public class ParentCon {
@@ -70,21 +70,27 @@ public class ParentCon {
     public void handleIncomeMessages() {
         System.out.println("start to handle action connection");
         String action = null;
-        DataInputStream actionInputStream = null;
+        ObjectInputStream actionInputStream = null;
         try {
             // Set up communication streams
-            actionInputStream = new DataInputStream(mainActionSocket.getInputStream());
+            actionInputStream = new ObjectInputStream(mainActionSocket.getInputStream());
 
             while (mainActionSocket != null && !mainActionSocket.isClosed()) {
 
                 // Set up communication streams
-                action = actionInputStream.readUTF();
+                action = (String)actionInputStream.readObject();
                 handleCommand(action);
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
-            closeConnection();
+            try {
+                actionInputStream.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            //closeConnection();
         }
 
     }
@@ -116,11 +122,23 @@ public class ParentCon {
                     case "refresh":
                         refresh();
                         break;
+                        case "update":
+                        update();
+                        break;
                     default:
                         System.out.println("Command not supported");
                         // code to be executed if none of the cases match
                 }
             }
+        }
+    }
+
+    private void update() {
+        try (ObjectInputStream inputObject = new ObjectInputStream(mainActionSocket.getInputStream())) {
+            ParentConInfo parentConInfo = (ParentConInfo) inputObject.readObject();
+            parents.updateParentConInfo(parentConInfo);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
